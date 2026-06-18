@@ -37,7 +37,9 @@ export class HtmlParserService {
   }
 
   buildPreviewDocument(item: StudyItem | null, styleText: string, query: string): string {
-    const body = item ? this.highlightHtml(item.rawHtml, query) : '<p>Selecciona un elemento.</p>';
+    const body = item
+      ? this.highlightHtml(this.applyDetectedAnswerMarkers(item.rawHtml, item.markedAnswers ?? []), query)
+      : '<p>Selecciona un elemento.</p>';
 
     return `<!doctype html>
 <html lang="es">
@@ -59,6 +61,16 @@ export class HtmlParserService {
   th, td { border: 1px solid #d8e0dc; padding: 8px; vertical-align: top; }
   pre { white-space: pre-wrap; overflow-wrap: anywhere; }
   mark { background: #ffe66f; color: #111; border-radius: 3px; padding: 0 2px; }
+  .study-detected-answer {
+    display: block !important;
+    margin: 6px 0 !important;
+    background: #dcf7e7 !important;
+    border: 1px solid #55b37e !important;
+    border-radius: 6px !important;
+    box-shadow: inset 3px 0 0 #15803d !important;
+    padding: 4px 8px !important;
+  }
+  li.study-detected-answer { list-style-position: inside !important; }
   article { max-width: 980px; margin: 0 auto; }
 ${styleText}
 </style>
@@ -170,6 +182,7 @@ ${styleText}
     }
 
     const rawHtml = elements.map((element) => element.outerHTML).join('\n');
+    const options = this.extractOptions(rawHtml);
     const type = this.detectType(elements[0], text);
     const numberLabel = this.extractNumberLabel(text, position);
     const title = this.buildTitle(text, sourceTitle, numberLabel, type);
@@ -186,7 +199,8 @@ ${styleText}
       text,
       normalizedText: normalizeText(text),
       keywords: extractKeywords(`${sourceTitle} ${text}`),
-      options: this.extractOptions(rawHtml),
+      options,
+      markedAnswers: this.extractMarkedAnswers(rawHtml, options),
       confidence: this.score(elements[0], text, type),
       starred: false,
       learned: false,
@@ -253,6 +267,107 @@ ${styleText}
       .map((option) => option.match(/^[A-D][.)]\s+(.+)/i)?.[1] ?? '')
       .filter(Boolean)
       .slice(0, 8);
+  }
+
+  private extractMarkedAnswers(rawHtml: string, options: string[]): string[] {
+    const fragment = new DOMParser().parseFromString(`<main>${rawHtml}</main>`, 'text/html');
+    const root = fragment.querySelector('main');
+
+    if (!root) {
+      return [];
+    }
+
+    const markedTexts = Array.from(root.querySelectorAll('*'))
+      .filter((element) => this.hasAnswerMarker(element))
+      .map((element) => cleanText(element.textContent ?? ''))
+      .filter((text) => text.length > 0);
+    const labelTexts = cleanText(root.textContent ?? '')
+      .split(/(?<=[.!?])\s+|\n+/)
+      .map((line) => line.match(/(?:correct\s+answer|answer\s+key|respuesta\s+correcta|opcion\s+correcta|solucion)\s*[:.-]\s*(.+)$/i)?.[1] ?? '')
+      .map(cleanText)
+      .filter(Boolean);
+
+    const answers = new Set<string>();
+
+    for (const option of options) {
+      const normalizedOption = normalizeText(option);
+      const isMarked = [...markedTexts, ...labelTexts].some((text) => {
+        const normalizedTextValue = normalizeText(text);
+
+        return (
+          normalizedTextValue === normalizedOption ||
+          normalizedTextValue.includes(normalizedOption) ||
+          normalizedOption.includes(normalizedTextValue)
+        );
+      });
+
+      if (isMarked) {
+        answers.add(option);
+      }
+    }
+
+    if (!answers.size) {
+      for (const text of labelTexts) {
+        answers.add(text);
+      }
+    }
+
+    return [...answers].slice(0, 8);
+  }
+
+  private hasAnswerMarker(element: Element): boolean {
+    const attributes = Array.from(element.attributes)
+      .map((attribute) => `${attribute.name} ${attribute.value}`)
+      .join(' ');
+    const value = normalizeText(attributes);
+
+    if (!value || /\b(incorrect|wrong|false|disabled|distractor)\b/.test(value)) {
+      return false;
+    }
+
+    if (
+      /\b(correct|right|success|selected|checked|solution|solucion|correcta|verdadero|true)\b/.test(value) ||
+      /correct-answer|answer-correct|respuesta-correcta|is-correct/.test(value)
+    ) {
+      return true;
+    }
+
+    const style = element.getAttribute('style')?.toLowerCase() ?? '';
+
+    return /#d4edda|#c6efce|#bbf7d0|rgb\(40,\s*167,\s*69\)|rgb\(34,\s*197,\s*94\)|green/.test(style);
+  }
+
+  private applyDetectedAnswerMarkers(rawHtml: string, markedAnswers: string[]): string {
+    if (!markedAnswers.length) {
+      return rawHtml;
+    }
+
+    const fragment = new DOMParser().parseFromString(`<main>${rawHtml}</main>`, 'text/html');
+    const root = fragment.querySelector('main');
+
+    if (!root) {
+      return rawHtml;
+    }
+
+    const normalizedAnswers = markedAnswers.map(normalizeText);
+
+    for (const element of Array.from(root.querySelectorAll('li,p,div,td,th,span'))) {
+      const text = normalizeText(element.textContent ?? '');
+
+      if (!text) {
+        continue;
+      }
+
+      const matchesAnswer = normalizedAnswers.some(
+        (answer) => text === answer || (text.includes(answer) && text.length <= answer.length + 18),
+      );
+
+      if (matchesAnswer) {
+        element.classList.add('study-detected-answer');
+      }
+    }
+
+    return root.innerHTML;
   }
 
   private score(element: Element, text: string, type: StudyItemType): number {

@@ -10,6 +10,7 @@ El proyecto nace como una version mejorada de un `index.html` simple: ahora sepa
 - Agrupacion de bloques por preguntas numeradas, encabezados y contenido relevante.
 - Limpieza de scripts/eventos antes de previsualizar contenido.
 - Vista aislada en `iframe sandbox` para conservar estilos sin mezclar el HTML externo con la app.
+- Deteccion y resaltado de respuestas marcadas en el HTML original.
 - Busqueda con normalizacion de acentos, scoring, filtros por fuente, tipo y estado.
 - Panel de resultados, lector, palabras clave, opciones detectadas y apuntes propios.
 - Modo practica con tarjetas pendientes/aprendidas.

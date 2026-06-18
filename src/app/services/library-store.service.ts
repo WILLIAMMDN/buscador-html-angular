@@ -272,7 +272,7 @@ export class LibraryStoreService {
     }
 
     this.documents.set(snapshot.documents);
-    this.items.set(snapshot.items);
+    this.items.set(snapshot.items.map((item) => ({ ...item, markedAnswers: item.markedAnswers ?? [] })));
     this.selectedId.set(snapshot.items[0]?.id ?? null);
     this.practiceIndex.set(0);
     this.status.set(`Biblioteca importada: ${snapshot.items.length} elementos`);
@@ -317,7 +317,7 @@ export class LibraryStoreService {
 
       if (snapshot.version === 1 && Array.isArray(snapshot.documents) && Array.isArray(snapshot.items)) {
         this.documents.set(snapshot.documents);
-        this.items.set(snapshot.items);
+        this.items.set(snapshot.items.map((item) => ({ ...item, markedAnswers: item.markedAnswers ?? [] })));
         this.selectedId.set(snapshot.items[0]?.id ?? null);
         this.status.set(`Biblioteca restaurada: ${snapshot.items.length} elementos`);
       }

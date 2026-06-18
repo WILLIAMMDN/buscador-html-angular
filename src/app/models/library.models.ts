@@ -26,6 +26,7 @@ export interface StudyItem {
   normalizedText: string;
   keywords: string[];
   options: string[];
+  markedAnswers: string[];
   confidence: number;
   starred: boolean;
   learned: boolean;

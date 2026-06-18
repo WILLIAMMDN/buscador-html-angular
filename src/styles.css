@@ -569,13 +569,54 @@ svg {
 }
 
 .option-list {
+  display: grid;
+  gap: 8px;
   margin: 0;
-  padding: 0 18px 0 32px;
+  padding: 0 13px;
   color: #42514a;
+  list-style-position: inside;
 }
 
-.option-list li + li {
-  margin-top: 7px;
+.option-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.option-list li.correct-answer {
+  border-color: #79c797;
+  background: #e8f8ee;
+  box-shadow: inset 3px 0 0 #15803d;
+  color: #174b2a;
+  font-weight: 800;
+}
+
+.option-list li strong,
+.marked-answer-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #146c38;
+  font-size: 0.78rem;
+}
+
+.marked-answer-list {
+  display: grid;
+  gap: 8px;
+  padding: 0 13px;
+}
+
+.marked-answer-list span {
+  min-height: 36px;
+  border: 1px solid #79c797;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #e8f8ee;
+  font-weight: 900;
 }
 
 .note-box {

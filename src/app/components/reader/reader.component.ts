@@ -56,9 +56,31 @@ import { PreviewFrameComponent } from '../preview-frame/preview-frame.component'
               </div>
               <ol class="option-list">
                 @for (option of item.options; track option) {
-                  <li>{{ option }}</li>
+                  <li [class.correct-answer]="isMarkedAnswer(item.markedAnswers, option)">
+                    <span>{{ option }}</span>
+                    @if (isMarkedAnswer(item.markedAnswers, option)) {
+                      <strong>
+                        <svg lucideCheckCircle size="15"></svg>
+                        Marcada
+                      </strong>
+                    }
+                  </li>
                 }
               </ol>
+            }
+
+            @if (item.markedAnswers.length) {
+              <div class="section-title">
+                <span>Respuesta marcada en el HTML</span>
+              </div>
+              <div class="marked-answer-list">
+                @for (answer of item.markedAnswers; track answer) {
+                  <span>
+                    <svg lucideCheckCircle size="15"></svg>
+                    {{ answer }}
+                  </span>
+                }
+              </div>
             }
 
             <label class="note-box">
@@ -81,5 +103,24 @@ export class ReaderComponent {
 
   onNote(id: string, event: Event): void {
     this.store.setNote(id, (event.target as HTMLTextAreaElement).value);
+  }
+
+  isMarkedAnswer(markedAnswers: string[], option: string): boolean {
+    const normalizedOption = this.normalize(option);
+
+    return markedAnswers.some((answer) => {
+      const normalizedAnswer = this.normalize(answer);
+
+      return normalizedAnswer === normalizedOption || normalizedAnswer.includes(normalizedOption);
+    });
+  }
+
+  private normalize(value: string): string {
+    return value
+      .toLocaleLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 }
