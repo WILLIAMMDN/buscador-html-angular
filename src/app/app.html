@@ -1,0 +1,60 @@
+<main class="app-shell">
+  <aside class="sidebar">
+    <header class="brand-block">
+      <div class="brand-mark">
+        <svg lucideBrain size="24"></svg>
+      </div>
+      <div>
+        <h1>HTML Study Lab</h1>
+        <p>Buscador estructurado para bibliotecas locales</p>
+      </div>
+    </header>
+
+    <app-import-panel />
+    <app-stats-panel />
+    <app-search-panel />
+    <app-result-list />
+  </aside>
+
+  <section class="main-panel">
+    <header class="main-toolbar">
+      <div>
+        <span class="eyebrow">{{ store.status() }}</span>
+        <h2>
+          @if (store.view() === 'reader') {
+            Lector
+          } @else if (store.view() === 'practice') {
+            Practica
+          } @else {
+            Analitica
+          }
+        </h2>
+      </div>
+
+      <nav class="view-tabs" aria-label="Vistas">
+        <button type="button" [class.active]="store.view() === 'reader'" (click)="setView('reader')">
+          <svg lucidePanelTop size="17"></svg>
+          Lector
+        </button>
+        <button type="button" [class.active]="store.view() === 'practice'" (click)="setView('practice')">
+          <svg lucideBookOpenText size="17"></svg>
+          Practica
+        </button>
+        <button type="button" [class.active]="store.view() === 'insights'" (click)="setView('insights')">
+          <svg lucideBarChart3 size="17"></svg>
+          Analitica
+        </button>
+      </nav>
+    </header>
+
+    <section class="main-content">
+      @if (store.view() === 'reader') {
+        <app-reader />
+      } @else if (store.view() === 'practice') {
+        <app-practice />
+      } @else {
+        <app-insights />
+      }
+    </section>
+  </section>
+</main>
